@@ -1,0 +1,5 @@
+{
+  "name": "Bug World: Motivated Simulation",
+  "description": "A stochastic biological simulation of bugs with internal drives for hunger, reproduction, and fatigue.",
+  "requestFramePermissions": []
+}
