@@ -11,6 +11,7 @@ import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
 const BugWorld = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const frameRef = useRef<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [showDrives, setShowDrives] = useState(false);
   const [autoFeed, setAutoFeed] = useState(true);
@@ -27,12 +28,19 @@ const BugWorld = () => {
   const [aiResponse, setAiResponse] = useState('');
   const [isAiThinking, setIsAiThinking] = useState(false);
 
+  const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+
   const handleAiConsult = async () => {
     if (!aiQuery.trim()) return;
+    if (!geminiApiKey) {
+      setAiResponse('Missing VITE_GEMINI_API_KEY. Add it to your .env.local file.');
+      return;
+    }
+
     setIsAiThinking(true);
     setAiResponse('');
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
       const response = await ai.models.generateContent({
         model: "gemini-3.1-pro-preview",
         contents: `Current Simulation State:
@@ -91,7 +99,13 @@ User Inquiry: ${aiQuery}`,
       createBug(C.DIV_X + 120, C.H / 2 + 40, 50),
     ];
 
-    requestAnimationFrame(animate);
+    frameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
   }, []);
 
   const createBug = (x: number, y: number, w: number, hunger = 0, repro = 0, fatigue = 0): Bug => ({
@@ -119,7 +133,7 @@ User Inquiry: ${aiQuery}`,
     }
 
     draw();
-    requestAnimationFrame(animate);
+    frameRef.current = requestAnimationFrame(animate);
   };
 
   const isAtHome = (b: Bug, buffer = 0) => {
